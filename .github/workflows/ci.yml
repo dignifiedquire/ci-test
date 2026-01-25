@@ -10,6 +10,16 @@ jobs:
   test:
     runs-on: self-hosted
     steps:
+      - name: Check token availability
+        run: |
+          echo "Token available: ${{ github.token != '' }}"
+          echo "Token length: ${#GITHUB_TOKEN}"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Show environment
         run: |
           echo "GitHub Event: ${{ github.event_name }}"
@@ -17,15 +27,10 @@ jobs:
           echo "GitHub SHA: ${{ github.sha }}"
           echo "Runner OS: ${{ runner.os }}"
 
-      - name: Run tests
+      - name: Show checked out files
         run: |
-          echo "Running tests..."
-          echo "Hello from CI!"
-          date
-          uname -a
-
-      - name: Check working directory
-        run: |
-          echo "Working directory:"
-          pwd
+          echo "Repository contents:"
           ls -la
+          echo ""
+          echo "README:"
+          cat README.md || echo "No README"
