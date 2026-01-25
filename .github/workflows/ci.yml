@@ -10,9 +10,6 @@ jobs:
   test:
     runs-on: self-hosted
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Show environment
         run: |
           echo "GitHub Event: ${{ github.event_name }}"
@@ -27,7 +24,8 @@ jobs:
           date
           uname -a
 
-      - name: Check files
+      - name: Check working directory
         run: |
-          echo "Repository contents:"
+          echo "Working directory:"
+          pwd
           ls -la
