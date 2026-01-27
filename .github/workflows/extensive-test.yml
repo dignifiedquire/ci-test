@@ -1,0 +1,182 @@
+name: Extensive CI Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_name:
+        description: 'Test identifier'
+        required: false
+        default: 'manual'
+
+jobs:
+  # Test 1: Basic environment and context
+  environment-test:
+    runs-on: self-hosted
+    steps:
+      - name: Check GitHub context
+        run: |
+          echo "=== GitHub Context ==="
+          echo "event_name: ${{ github.event_name }}"
+          echo "ref: ${{ github.ref }}"
+          echo "sha: ${{ github.sha }}"
+          echo "repository: ${{ github.repository }}"
+          echo "actor: ${{ github.actor }}"
+          echo "workflow: ${{ github.workflow }}"
+          echo "run_id: ${{ github.run_id }}"
+          echo "run_number: ${{ github.run_number }}"
+
+      - name: Check runner context
+        run: |
+          echo "=== Runner Context ==="
+          echo "os: ${{ runner.os }}"
+          echo "arch: ${{ runner.arch }}"
+          echo "name: ${{ runner.name }}"
+
+      - name: Check environment variables
+        run: |
+          echo "=== Environment ==="
+          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
+          echo "GITHUB_SHA: $GITHUB_SHA"
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "RUNNER_OS: $RUNNER_OS"
+
+  # Test 2: Checkout and file operations
+  checkout-test:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify checkout
+        run: |
+          echo "=== Working Directory ==="
+          pwd
+          ls -la
+          echo ""
+          echo "=== Git Status ==="
+          git status
+          git log --oneline -3
+
+      - name: Create test artifact
+        run: |
+          echo "Test artifact created at $(date)" > test-output.txt
+          echo "Run ID: ${{ github.run_id }}" >> test-output.txt
+          cat test-output.txt
+
+  # Test 3: Multi-step with outputs
+  outputs-test:
+    runs-on: self-hosted
+    steps:
+      - name: Generate output
+        id: generator
+        run: |
+          echo "timestamp=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "random=$RANDOM" >> $GITHUB_OUTPUT
+          echo "message=Hello from step" >> $GITHUB_OUTPUT
+
+      - name: Use output
+        run: |
+          echo "Timestamp: ${{ steps.generator.outputs.timestamp }}"
+          echo "Random: ${{ steps.generator.outputs.random }}"
+          echo "Message: ${{ steps.generator.outputs.message }}"
+
+      - name: Verify outputs exist
+        if: steps.generator.outputs.timestamp != ''
+        run: echo "Outputs are working correctly!"
+
+  # Test 4: Environment variables
+  env-test:
+    runs-on: self-hosted
+    env:
+      JOB_VAR: "job-level-value"
+    steps:
+      - name: Step with env
+        env:
+          STEP_VAR: "step-level-value"
+        run: |
+          echo "Job var: $JOB_VAR"
+          echo "Step var: $STEP_VAR"
+
+      - name: Modify GITHUB_ENV
+        run: |
+          echo "DYNAMIC_VAR=set-dynamically" >> $GITHUB_ENV
+
+      - name: Check dynamic env
+        run: |
+          echo "Dynamic var: $DYNAMIC_VAR"
+
+  # Test 5: Conditional execution
+  conditional-test:
+    runs-on: self-hosted
+    steps:
+      - name: Always runs
+        run: echo "This always runs"
+
+      - name: Conditional on expression
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "This runs on workflow_dispatch"
+
+      - name: Conditional with input
+        if: inputs.test_name != ''
+        run: echo "Test name is: ${{ inputs.test_name }}"
+
+  # Test 6: Matrix strategy
+  matrix-test:
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        version: [1, 2, 3]
+        include:
+          - version: 1
+            name: "first"
+          - version: 2
+            name: "second"
+          - version: 3
+            name: "third"
+    steps:
+      - name: Matrix job
+        run: |
+          echo "Version: ${{ matrix.version }}"
+          echo "Name: ${{ matrix.name }}"
+
+  # Test 7: Job dependencies
+  dependent-job:
+    runs-on: self-hosted
+    needs: [environment-test, checkout-test, outputs-test]
+    steps:
+      - name: All dependencies passed
+        run: |
+          echo "All prerequisite jobs completed successfully!"
+          echo "This job ran after: environment-test, checkout-test, outputs-test"
+
+  # Test 8: Failure handling
+  failure-test:
+    runs-on: self-hosted
+    steps:
+      - name: This might fail
+        id: maybe_fail
+        continue-on-error: true
+        run: |
+          echo "About to run a command..."
+          # This succeeds
+          true
+
+      - name: Check previous step
+        if: steps.maybe_fail.outcome == 'success'
+        run: echo "Previous step succeeded"
+
+  # Final summary
+  summary:
+    runs-on: self-hosted
+    needs: [environment-test, checkout-test, outputs-test, env-test, conditional-test, matrix-test, dependent-job, failure-test]
+    if: always()
+    steps:
+      - name: Test Summary
+        run: |
+          echo "================================"
+          echo "   Extensive CI Test Complete   "
+          echo "================================"
+          echo "All jobs finished execution"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Triggered by: ${{ github.actor }}"
