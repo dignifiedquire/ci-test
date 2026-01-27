@@ -119,7 +119,8 @@ jobs:
 
       - name: Conditional with input
         if: inputs.test_name != ''
-        run: echo "Test name is: ${{ inputs.test_name }}"
+        run: |
+          echo "Test name is: ${{ inputs.test_name }}"
 
   # Test 6: Matrix strategy
   matrix-test:
