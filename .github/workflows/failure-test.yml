@@ -1,0 +1,99 @@
+name: Failure Scenarios
+
+on:
+  workflow_dispatch:
+
+jobs:
+  # Test 1: A step fails, subsequent steps are skipped
+  basic-failure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Succeeding step
+        run: echo "This step succeeds"
+
+      - name: Failing step
+        run: |
+          echo "About to fail"
+          exit 1
+
+      - name: Skipped after failure
+        run: echo "This should be skipped"
+
+  # Test 2: continue-on-error with actual failure
+  continue-on-error:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Failing with continue
+        id: failing_step
+        continue-on-error: true
+        run: |
+          echo "This will fail but continue"
+          exit 42
+
+      - name: Check outcome
+        run: |
+          echo "Previous outcome: ${{ steps.failing_step.outcome }}"
+          echo "Previous conclusion: ${{ steps.failing_step.conclusion }}"
+
+      - name: Still running
+        run: echo "Job continues despite earlier failure"
+
+  # Test 3: if: failure() conditional
+  failure-conditional:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cause failure
+        run: exit 1
+
+      - name: Run on failure
+        if: failure()
+        run: echo "Running because previous step failed"
+
+      - name: Run on success only
+        if: success()
+        run: echo "This should be skipped"
+
+      - name: Always run
+        if: always()
+        run: echo "This always runs regardless"
+
+  # Test 4: Dependent job skipped when dependency fails
+  depends-on-failure:
+    runs-on: ubuntu-latest
+    needs: [basic-failure]
+    steps:
+      - name: Should not run
+        run: echo "This should never execute"
+
+  # Test 5: Dependent job with if: always()
+  depends-always:
+    runs-on: ubuntu-latest
+    needs: [basic-failure]
+    if: always()
+    steps:
+      - name: Runs despite failed dependency
+        run: echo "Running with always() despite dependency failure"
+
+      - name: Check needs context
+        run: |
+          echo "basic-failure result: ${{ needs.basic-failure.result }}"
+
+  # Test 6: Dependent job with if: failure()
+  depends-on-failure-conditional:
+    runs-on: ubuntu-latest
+    needs: [basic-failure]
+    if: failure()
+    steps:
+      - name: Runs because dependency failed
+        run: echo "Running because basic-failure failed"
+
+  # Test 7: Mixed dependencies (one fails, one succeeds)
+  mixed-dependency:
+    runs-on: ubuntu-latest
+    needs: [basic-failure, continue-on-error]
+    if: always()
+    steps:
+      - name: Check all dependencies
+        run: |
+          echo "basic-failure: ${{ needs.basic-failure.result }}"
+          echo "continue-on-error: ${{ needs.continue-on-error.result }}"
