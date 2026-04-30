@@ -6,9 +6,9 @@ const fs = require('fs');
 const os = require('os');
 
 function getInput(name) {
-  // GitHub Actions converts `with:` keys to INPUT_<UPPER_NAME> env vars
-  // (with hyphens replaced by underscores).
-  const key = 'INPUT_' + name.replace(/-/g, '_').toUpperCase();
+  // GitHub Actions converts `with:` keys to INPUT_<UPPER_NAME> env vars,
+  // replacing only spaces (not hyphens) with underscores.
+  const key = 'INPUT_' + name.replace(/ /g, '_').toUpperCase();
   return (process.env[key] ?? '').trim();
 }
 
