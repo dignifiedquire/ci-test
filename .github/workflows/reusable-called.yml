@@ -1,0 +1,35 @@
+name: Reusable - Called
+
+on:
+  workflow_call:
+    inputs:
+      who-to-greet:
+        description: Person or thing to greet
+        required: true
+        type: string
+      times:
+        description: How many times to repeat
+        required: false
+        type: number
+        default: 1
+    outputs:
+      greeting:
+        description: The composed greeting
+        value: ${{ jobs.greet.outputs.greeting }}
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    outputs:
+      greeting: ${{ steps.compose.outputs.phrase }}
+    steps:
+      - name: Compose greeting
+        id: compose
+        run: |
+          echo "phrase=Hello, ${{ inputs.who-to-greet }}!" >> "$GITHUB_OUTPUT"
+
+      - name: Repeat
+        run: |
+          for i in $(seq 1 ${{ inputs.times }}); do
+            echo "[$i] ${{ steps.compose.outputs.phrase }}"
+          done

@@ -1,0 +1,61 @@
+name: Composite Action
+
+on:
+  workflow_dispatch:
+
+jobs:
+  default-input:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run greeter with defaults
+        id: greet
+        uses: ./.github/actions/greeter
+
+      - name: Use action output
+        run: |
+          echo "Got phrase: ${{ steps.greet.outputs.phrase }}"
+
+  custom-inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run greeter with custom inputs
+        id: greet
+        uses: ./.github/actions/greeter
+        with:
+          who-to-greet: runy
+          greeting: Howdy
+
+      - name: Use action output
+        run: |
+          echo "Got phrase: ${{ steps.greet.outputs.phrase }}"
+
+  reuse-twice:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: First call
+        id: first
+        uses: ./.github/actions/greeter
+        with:
+          who-to-greet: alpha
+          greeting: Hi
+
+      - name: Second call
+        id: second
+        uses: ./.github/actions/greeter
+        with:
+          who-to-greet: beta
+          greeting: Hey
+
+      - name: Compare outputs
+        run: |
+          echo "First: ${{ steps.first.outputs.phrase }}"
+          echo "Second: ${{ steps.second.outputs.phrase }}"

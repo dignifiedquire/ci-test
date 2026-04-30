@@ -1,0 +1,57 @@
+name: JS Action
+
+on:
+  workflow_dispatch:
+
+jobs:
+  default-input:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run JS greeter with defaults
+        id: greet
+        uses: ./.github/actions/js-greeter
+
+      - name: Use action outputs
+        run: |
+          echo "Greeting: ${{ steps.greet.outputs.greeting }}"
+          echo "Upper: ${{ steps.greet.outputs.upper }}"
+
+  custom-input:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run JS greeter with custom input
+        id: greet
+        uses: ./.github/actions/js-greeter
+        with:
+          who-to-greet: runy
+
+      - name: Use action outputs
+        run: |
+          echo "Greeting: ${{ steps.greet.outputs.greeting }}"
+          echo "Upper: ${{ steps.greet.outputs.upper }}"
+
+  failing-action:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run JS greeter that fails
+        id: greet
+        uses: ./.github/actions/js-greeter
+        continue-on-error: true
+        with:
+          who-to-greet: doomed
+          fail: 'true'
+
+      - name: After failing action
+        run: |
+          echo "Action outcome: ${{ steps.greet.outcome }}"
+          echo "Action conclusion: ${{ steps.greet.conclusion }}"
+          echo "Greeting captured before fail: ${{ steps.greet.outputs.greeting }}"

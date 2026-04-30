@@ -1,0 +1,19 @@
+name: JS Greeter
+description: A JavaScript action that demonstrates inputs/outputs/annotations.
+inputs:
+  who-to-greet:
+    description: Person or thing to greet
+    required: true
+    default: world
+  fail:
+    description: If 'true', the action fails with exit code 1
+    required: false
+    default: 'false'
+runs:
+  using: node20
+  main: index.js
+outputs:
+  greeting:
+    description: The composed greeting
+  upper:
+    description: The uppercase greeting

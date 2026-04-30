@@ -1,0 +1,29 @@
+name: Greeter
+description: Greets the given name and returns the greeting as an output.
+inputs:
+  who-to-greet:
+    description: Person or thing to greet
+    required: true
+    default: world
+  greeting:
+    description: Greeting word
+    required: false
+    default: Hello
+runs:
+  using: composite
+  steps:
+    - name: Compose greeting
+      id: compose
+      shell: bash
+      run: |
+        echo "phrase=${{ inputs.greeting }}, ${{ inputs.who-to-greet }}!" >> "$GITHUB_OUTPUT"
+
+    - name: Print greeting
+      shell: bash
+      run: |
+        echo "Greeter says: ${{ steps.compose.outputs.phrase }}"
+
+outputs:
+  phrase:
+    description: The composed greeting
+    value: ${{ steps.compose.outputs.phrase }}

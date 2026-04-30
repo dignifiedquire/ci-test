@@ -1,0 +1,24 @@
+name: Reusable - Caller
+
+on:
+  workflow_dispatch:
+
+jobs:
+  with-default:
+    uses: ./.github/workflows/reusable-called.yml
+    with:
+      who-to-greet: world
+
+  with-explicit-input:
+    uses: ./.github/workflows/reusable-called.yml
+    with:
+      who-to-greet: runy
+      times: 3
+
+  consume-output:
+    runs-on: ubuntu-latest
+    needs: [with-explicit-input]
+    steps:
+      - name: Read called-workflow output
+        run: |
+          echo "Got greeting: ${{ needs.with-explicit-input.outputs.greeting }}"
