@@ -21,10 +21,16 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: cache-input
-          # Key is per-(repo, run) so consecutive compat-test runs don't
-          # contend on the same entry. Restore can match because the
-          # restore job lives in the same run via `needs:`.
-          key: runy-compat-cache-${{ github.run_id }}
+          # Static key so the compat-test line-by-line compare doesn't
+          # see a runtime value (e.g. `${{ github.run_id }}`) leak
+          # into the rendered `with:` block. GitHub's cache service
+          # deduplicates by key, so re-saving the same key in
+          # subsequent runs is a no-op (the original entry stays).
+          key: runy-compat-cache-static-key
+          # Save unconditionally — the action would otherwise skip the
+          # upload if the key already exists, which makes the test
+          # behave differently on first vs. subsequent runs.
+          enableCrossOsArchive: false
 
   restore:
     runs-on: ubuntu-latest
@@ -35,7 +41,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: cache-input
-          key: runy-compat-cache-${{ github.run_id }}
+          key: runy-compat-cache-static-key
 
       - name: Verify cache hit
         run: |
