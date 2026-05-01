@@ -1,0 +1,34 @@
+name: Concurrency
+on:
+  workflow_dispatch:
+
+# Workflow-level concurrency: each run cancels prior runs in the same
+# group. Used by both Runy and GitHub to bound queued work.
+concurrency:
+  group: concurrency-test-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Two jobs share a job-level concurrency group → must run serially.
+  group-a-first:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: concurrency-shared-${{ github.run_id }}
+      cancel-in-progress: false
+    steps:
+      - run: echo "group-a-first running"
+
+  group-a-second:
+    runs-on: ubuntu-latest
+    needs: [group-a-first]
+    concurrency:
+      group: concurrency-shared-${{ github.run_id }}
+      cancel-in-progress: false
+    steps:
+      - run: echo "group-a-second running after first"
+
+  # No concurrency group — runs in parallel with the others when ready.
+  unconstrained:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "unconstrained job, no concurrency group"

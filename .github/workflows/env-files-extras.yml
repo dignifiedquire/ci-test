@@ -1,0 +1,43 @@
+name: Env Files (extras)
+on:
+  workflow_dispatch:
+
+jobs:
+  # `GITHUB_PATH` writes from one step must show up on `$PATH` in
+  # subsequent steps. Using a unique binary name we drop into a fresh
+  # dir, then invoke from PATH in the next step.
+  github-path:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create binary and add to PATH
+        run: |
+          mkdir -p "$RUNNER_TEMP/extra-bin"
+          cat > "$RUNNER_TEMP/extra-bin/runy-marker" <<'EOF'
+          #!/bin/sh
+          echo runy-marker-from-path
+          EOF
+          chmod +x "$RUNNER_TEMP/extra-bin/runy-marker"
+          echo "$RUNNER_TEMP/extra-bin" >> "$GITHUB_PATH"
+
+      - name: Invoke binary via PATH
+        run: runy-marker
+
+  # `$GITHUB_STEP_SUMMARY` accumulates markdown across writes within a
+  # step (and across steps). Both Runy and GitHub render it on the run
+  # summary page. Plaintext download log doesn't show the rendered
+  # markdown, so most of this is snapshot-compare territory.
+  step-summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Append to summary
+        run: |
+          echo '## Test Summary' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '- bullet one' >> "$GITHUB_STEP_SUMMARY"
+          echo '- bullet two' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Continue summary in next step
+        run: |
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo '### After second step' >> "$GITHUB_STEP_SUMMARY"
+          echo 'second-step content' >> "$GITHUB_STEP_SUMMARY"

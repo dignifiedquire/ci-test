@@ -1,0 +1,45 @@
+name: Timeouts
+on:
+  workflow_dispatch:
+
+jobs:
+  # Step that finishes well under its declared timeout.
+  step-timeout-ok:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Quick step under timeout
+        timeout-minutes: 1
+        run: |
+          echo "starting"
+          sleep 1
+          echo "done"
+
+  # Job-level timeout that the contained steps stay under.
+  job-timeout-ok:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: First fast step
+        run: echo "step 1"
+      - name: Second fast step
+        run: echo "step 2"
+
+  # Step where the timeout fires. `continue-on-error` keeps the rest of
+  # the workflow going so the snapshot is reproducible. The runner must
+  # report a timeout outcome (not generic failure) for this step.
+  step-timeout-fires:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Step that exceeds its timeout
+        timeout-minutes: 1
+        continue-on-error: true
+        run: |
+          echo "going over"
+          # Sleep longer than the per-step timeout. 70s < 1min is wrong
+          # on purpose: 90s exceeds the 1-minute limit so the runner
+          # cancels the step. Keep this < the job's default 6h timeout.
+          sleep 90
+          echo "should not reach this line"
+
+      - name: After timeout
+        run: echo "subsequent step still runs because of continue-on-error"

@@ -1,0 +1,44 @@
+name: Cache
+on:
+  workflow_dispatch:
+
+# `actions/cache@v4` registers a post-step to save on success. Runy
+# doesn't run post-steps yet, so use the explicit `save@v4` /
+# `restore@v4` variants — those are fully sync and produce log lines
+# that match the upstream runner without needing post-execution.
+jobs:
+  # First job populates a cache entry under a unique key so subsequent
+  # runs (and the restore job below) can hit it.
+  save:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create file to cache
+        run: |
+          mkdir -p cache-input
+          echo "fixed-content-for-cache-test" > cache-input/payload.txt
+
+      - name: Save cache
+        uses: actions/cache/save@v4
+        with:
+          path: cache-input
+          # Key is per-(repo, run) so consecutive compat-test runs don't
+          # contend on the same entry. Restore can match because the
+          # restore job lives in the same run via `needs:`.
+          key: runy-compat-cache-${{ github.run_id }}
+
+  restore:
+    runs-on: ubuntu-latest
+    needs: [save]
+    steps:
+      - name: Restore cache
+        id: restore
+        uses: actions/cache/restore@v4
+        with:
+          path: cache-input
+          key: runy-compat-cache-${{ github.run_id }}
+
+      - name: Verify cache hit
+        run: |
+          test "${{ steps.restore.outputs.cache-hit }}" = "true"
+          test "$(cat cache-input/payload.txt)" = "fixed-content-for-cache-test"
+          echo "cache hit confirmed"
